@@ -30,29 +30,40 @@ double TSPSolver::euclidean_distance(Node node1, Node node2) {
       std::pow(node1.second - node2.second, 2));
 }
 
-double TSPSolver::solve_with_graph(const Graph &graph) {
+double TSPSolver::solve_with_graph_p(const Graph &graph) {
   auto n = graph.size();
   auto visited = std::vector(n, false);
   visited[0] = true;
-  return solve_with_graph(graph, 0, visited, 1, n, 0.0);
+  auto best_cost = INF;
+  return solve_with_graph_p(graph, 0, visited, 1, n, 0.0, best_cost);
 }
 
-double TSPSolver::solve_with_graph(const Graph &graph, int current,
-                                   std::vector<bool> &visited, size_t count,
-                                   const size_t n, double cost) {
-  if (count == n)
-    return cost + graph[current][0];
+double TSPSolver::solve_with_graph_p(const Graph &graph, int current,
+                                     std::vector<bool> &visited, size_t count,
+                                     size_t n, double cost, double &best_cost) {
+
+  if (cost > best_cost)
+    return INF;
+
+  if (count == n) {
+
+    auto res = cost + graph[current][0];
+#pragma omp critical
+    best_cost = std::min(best_cost, res);
+
+    return res;
+  }
 
   auto min_cost = INF;
-
+#pragma omp parallel for reduction(min:min_cost) firstprivate(visited)
   for (int i = 0; i < n; ++i)
     if (not visited[i]) {
       visited[i] = true;
-      auto new_cost = solve_with_graph(graph, i, visited, count + 1, n,
-                                       cost + graph[current][i]);
+      auto new_cost = solve_with_graph_bb(graph, i, visited, count + 1, n, cost + graph[current][i], best_cost);
       min_cost = std::min(min_cost, new_cost);
       visited[i] = false;
     }
+
   return min_cost;
 }
 
@@ -60,7 +71,7 @@ double TSPSolver::solve_with_graph_bb(const TSPSolver::Graph &graph) {
   auto n = graph.size();
   auto visited = std::vector(n, false);
   visited[0] = true;
-  double best_cost = INF;
+  auto best_cost = INF;
   return solve_with_graph_bb(graph, 0, visited, 1, n, 0.0, best_cost);
 }
 
@@ -89,5 +100,6 @@ double TSPSolver::solve_with_graph_bb(const TSPSolver::Graph &graph,
       min_cost = std::min(min_cost, new_cost);
       visited[i] = false;
     }
+
   return min_cost;
 }

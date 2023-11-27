@@ -6,6 +6,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <omp.h>
+#include <stdio.h>
 
 class TSPSolver {
  public:
@@ -23,13 +25,13 @@ class TSPSolver {
   static Nodes parse_file(std::ifstream &file);
   static Graph convert_to_graph(Nodes nodes);
 
-  static double solve_with_graph(const Graph &graph);
+  static double solve_with_graph_p(const Graph &graph);
   static double solve_with_graph_bb(const Graph &graph);
 
  private:
-  static double solve_with_graph(const Graph &graph, int current,
-                                 std::vector<bool> &visited, size_t count,
-                                 size_t n, double cost);
+  static double solve_with_graph_p(const Graph &graph, int current,
+                                   std::vector<bool> &visited, size_t count,
+                                   size_t n, double cost, double &best_cost);
   static double solve_with_graph_bb(const Graph &graph, int current,
                                     std::vector<bool> &visited, size_t count,
                                     size_t n, double cost, double &best_cost);
